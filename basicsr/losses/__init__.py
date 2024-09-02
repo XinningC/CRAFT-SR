@@ -25,7 +25,13 @@ def build_loss(opt):
     """
     opt = deepcopy(opt)
     loss_type = opt.pop('type')
-    loss = LOSS_REGISTRY.get(loss_type)(**opt)
     logger = get_root_logger()
+    loss = LOSS_REGISTRY.get(loss_type)(**opt)
     logger.info(f'Loss [{loss.__class__.__name__}] is created.')
     return loss
+
+
+if __name__=="__main__":
+    opt =  {"type": "L1Loss","loss_weight": 1.0,"reduction":"mean"}   
+        
+    cri = build_loss(opt)

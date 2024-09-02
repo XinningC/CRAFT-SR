@@ -13,6 +13,9 @@ _reduction_modes = ['none', 'mean', 'sum']
 def l1_loss(pred, target):
     return F.l1_loss(pred, target, reduction='none')
 
+@weighted_loss
+def smooth_l1_loss(pred, target):
+    return F.smooth_l1_loss(pred, target, reduction='none')
 
 @weighted_loss
 def mse_loss(pred, target):
@@ -50,6 +53,70 @@ class L1Loss(nn.Module):
             weight (Tensor, optional): of shape (N, C, H, W). Element-wise weights. Default: None.
         """
         return self.loss_weight * l1_loss(pred, target, weight, reduction=self.reduction)
+
+@LOSS_REGISTRY.register()
+class SmoothL1Loss(nn.Module):
+    """SmoothL1 (mean absolute error, MAE) loss.
+
+    Args:
+        loss_weight (float): Loss weight for L1 loss. Default: 1.0.
+        reduction (str): Specifies the reduction to apply to the output.
+            Supported choices are 'none' | 'mean' | 'sum'. Default: 'mean'.
+    """
+
+    def __init__(self, loss_weight=1.0, reduction='mean'):
+        super(SmoothL1Loss, self).__init__()
+        if reduction not in ['none', 'mean', 'sum']:
+            raise ValueError(f'Unsupported reduction mode: {reduction}. Supported ones are: {_reduction_modes}')
+
+        self.loss_weight = loss_weight
+        self.reduction = reduction
+
+    def forward(self, pred, target, weight=None, **kwargs):
+        """
+        Args:
+            pred (Tensor): of shape (N, C, H, W). Predicted tensor.
+            target (Tensor): of shape (N, C, H, W). Ground truth tensor.
+            weight (Tensor, optional): of shape (N, C, H, W). Element-wise weights. Default: None.
+        """
+        return self.loss_weight * smooth_l1_loss(pred, target, weight, reduction=self.reduction)
+
+@LOSS_REGISTRY.register()
+class EdgeSmoothL1Loss(nn.Module):
+    """SmoothL1 (mean absolute error, MAE) loss.
+
+    Args:
+        loss_weight (float): Loss weight for L1 loss. Default: 1.0.
+        reduction (str): Specifies the reduction to apply to the output.
+            Supported choices are 'none' | 'mean' | 'sum'. Default: 'mean'.
+    """
+
+    def __init__(self, loss_weight=1.0, reduction='mean',amplify = 32):
+        super(EdgeSmoothL1Loss, self).__init__()
+        if reduction not in ['none', 'mean', 'sum']:
+            raise ValueError(f'Unsupported reduction mode: {reduction}. Supported ones are: {_reduction_modes}')
+
+        self.loss_weight = loss_weight
+        self.reduction = reduction
+        self.amplify = amplify
+    def forward(self, pred, target, weight=None, amplify=8,**kwargs):
+        """
+        Args:
+            pred (Tensor): of shape (N, C, H, W). Predicted tensor.
+            target (Tensor): of shape (N, C, H, W). Ground truth tensor.
+            weight (Tensor, optional): of shape (N, C, H, W). Element-wise weights. Default: None.
+        """
+        generated_grad_x, generated_grad_y = compute_gradient(target,amplify=self.amplify,mode="sobel")
+        label_grad_x, label_grad_y = compute_gradient(pred,amplify=self.amplify,mode = "sobel")
+        # generated_grad_x, generated_grad_y *= amplify
+        # label_grad_x, label_grad_y *= amplify   
+        smooth_l1_loss = torch.nn.SmoothL1Loss()
+        loss_x = smooth_l1_loss(generated_grad_x, label_grad_x)
+        loss_y = smooth_l1_loss(generated_grad_y, label_grad_y)
+        Loss = (loss_x + loss_y) / 2
+        return self.loss_weight * smooth_l1_loss(pred, target, weight, reduction=self.reduction)
+
+
 
 
 @LOSS_REGISTRY.register()
@@ -251,3 +318,29 @@ class PerceptualLoss(nn.Module):
         features_t = features.transpose(1, 2)
         gram = features.bmm(features_t) / (c * h * w)
         return gram
+
+
+
+def compute_gradient(image,amplify=32,mode="sobel" ):
+        # cxn
+    # 为了增大smoothL1的值，考虑对梯度图乘以一定放大系数
+    # amplify = amplify
+    # print("amplify coef for sobel loss:",amplify)
+    # 使用Sobel滤波器计算图像的梯度   用sobel?
+    if mode == "gradient":
+        sobel_x = torch.tensor([[0, 0, 0], [-1/2, 0, 1/2], [0, 0, 0]], dtype=torch.float32).unsqueeze(0).unsqueeze(0)
+        # 
+        # sobel_x = torch.tensor([[[0, 0, 0], [-1/2, 0, 1/2], [0, 0, 0]],[[0, 0, 0], [-1/2, 0, 1/2], [0, 0, 0]],[[0, 0, 0], [-1/2, 0, 1/2], [0, 0, 0]]], dtype=torch.float32).unsqueeze(0).unsqueeze(0)
+        # 
+        sobel_y = torch.tensor([[0, -1/2, 0], [0, 0, 0], [0, 1/2, 0]], dtype=torch.float32).unsqueeze(0).unsqueeze(0)
+    if mode =="sobel":    
+        sobel_x = torch.tensor([[-1/8, 0, 1/8], [-2/8, 0, 2/8], [-1/8, 0, 1/8]], dtype=torch.float32).unsqueeze(0).unsqueeze(0)
+        sobel_y = torch.tensor([[-1/8, -2/8, -1/8], [0, 0, 0], [1/8, 2/8, 1/8]], dtype=torch.float32).unsqueeze(0).unsqueeze(0)
+    sobel_x = sobel_x.to(image.device)
+    sobel_y = sobel_y.to(image.device)
+    sobel_x = torch.cat((sobel_x,sobel_x,sobel_x),dim=1)
+    sobel_y = torch.cat((sobel_y,sobel_y,sobel_y),dim=1)
+    # 计算x方向和y方向的梯度
+    grad_x = torch.nn.functional.conv2d(image, sobel_x, padding=1)
+    grad_y = torch.nn.functional.conv2d(image, sobel_y, padding=1)
+    return grad_x*amplify, grad_y*amplify

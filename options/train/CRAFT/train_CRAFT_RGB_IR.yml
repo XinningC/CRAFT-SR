@@ -74,9 +74,20 @@ train:
 
   # losses
   pixel_opt:
-    type: L1Loss
+    type: SmoothL1Loss #L1Loss
     loss_weight: 1.0
     reduction: mean
+
+  edge_opt:
+    type: EdgeSmoothL1Loss 
+    loss_weight: 1.0
+    reduction: mean
+  
+  perceptual_opt:
+    type: PerceptualLoss 
+    layer_weights: {'conv5_4': 1.}
+    loss_weight: 1.0
+    reduction: mean  
 
 # validation settings
 val:

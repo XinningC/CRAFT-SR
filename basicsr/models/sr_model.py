@@ -58,6 +58,12 @@ class SRModel(BaseModel):
         else:
             self.cri_pix = None
 
+        if train_opt.get('edge_opt'):
+            self.cri_edge = build_loss(train_opt['edge_opt']).to(self.device)
+        else:
+            self.cri_edge = None
+
+
         if train_opt.get('perceptual_opt'):
             self.cri_perceptual = build_loss(train_opt['perceptual_opt']).to(self.device)
         else:
@@ -103,6 +109,11 @@ class SRModel(BaseModel):
             l_pix = self.cri_pix(self.output, self.gt)
             l_total += l_pix
             loss_dict['l_pix'] = l_pix
+        # edge loss
+        if self.cri_edge:
+            l_edge = self.cri_edge(self.output, self.gt)
+            l_total += l_edge
+            loss_dict['l_edge'] = l_edge
         # perceptual loss
         if self.cri_perceptual:
             l_percep, l_style = self.cri_perceptual(self.output, self.gt)
