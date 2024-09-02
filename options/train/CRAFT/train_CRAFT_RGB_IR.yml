@@ -30,8 +30,8 @@ datasets:
   val:
     name: RGB_IR # Set5
     type: PairedImageDataset
-    dataroot_gt: datasets/RGB_IR_0730_drop_train_B
-    dataroot_lq: datasets/RGB_IR_0730_drop_train_A
+    dataroot_gt: datasets/RGB_IR_0730_drop_test_B
+    dataroot_lq: datasets/RGB_IR_0730_drop_test_A
     io_backend:
       type: disk
 
