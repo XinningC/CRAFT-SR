@@ -639,8 +639,14 @@ class CRAFT(nn.Module):
         self.split_size = (split_size_0, split_size_1)
 
         num_in_ch = in_chans
-        num_out_ch = in_chans
+        if not kwargs.get("out_chans",False):
+            num_out_ch = in_chans
+        else:
+            num_out_ch = kwargs["out_chans"]
+        # print("\n"+str(num_out_ch)+"\n")
+        # exit()
         num_feat = 64
+        
         self.img_range = img_range
         self.num_feat = num_feat
         self.num_out_ch = num_out_ch
