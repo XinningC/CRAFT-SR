@@ -110,11 +110,11 @@ class EdgeSmoothL1Loss(nn.Module):
         label_grad_x, label_grad_y = compute_gradient(pred,amplify=self.amplify,mode = "sobel")
         # generated_grad_x, generated_grad_y *= amplify
         # label_grad_x, label_grad_y *= amplify   
-        smooth_l1_loss = torch.nn.SmoothL1Loss()
+        smooth_l1_loss = torch.nn.SmoothL1Loss(reduction=self.reduction)
         loss_x = smooth_l1_loss(generated_grad_x, label_grad_x)
         loss_y = smooth_l1_loss(generated_grad_y, label_grad_y)
         Loss = (loss_x + loss_y) / 2
-        return self.loss_weight * smooth_l1_loss(pred, target, weight, reduction=self.reduction)
+        return self.loss_weight * Loss
 
 
 
@@ -257,6 +257,8 @@ class PerceptualLoss(nn.Module):
             self.criterion = torch.nn.L1Loss()
         elif self.criterion_type == 'l2':
             self.criterion = torch.nn.L2loss()
+        if self.criterion_type == 'smoothl1':
+            self.criterion = torch.nn.SmoothL1Loss()        
         elif self.criterion_type == 'fro':
             self.criterion = None
         else:
