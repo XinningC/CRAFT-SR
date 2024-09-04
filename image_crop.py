@@ -1,9 +1,9 @@
 import os
 import cv2
 import tqdm
-img_source_dir = "/mnt/sda/Datasets/chuxinning/RGB_IR_0730"
+img_source_dir = "/mnt/ssd/home/chuxinning/datasets/RGB_IR_0730"
 
-dest_source_list = "/mnt/sda/Datasets/chuxinning/RGB_IR_0730_crop"
+dest_source_list = "/mnt/ssd/home/chuxinning/datasets/RGB_IR_0730_crop"
 
 train_modal = "train_A"
 list_train_A = os.listdir(os.path.join(img_source_dir,train_modal))

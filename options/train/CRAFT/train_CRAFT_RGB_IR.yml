@@ -86,8 +86,9 @@ train:
   perceptual_opt:
     type: PerceptualLoss 
     layer_weights: {'conv5_4': 1.}
-    loss_weight: 1.0
-    reduction: mean  
+    perceptual_weight: 1.0
+    style_weight: 1.0  
+    criterion: smoothl1
 
 # validation settings
 val:
