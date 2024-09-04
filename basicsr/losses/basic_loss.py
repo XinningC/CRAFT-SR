@@ -340,8 +340,15 @@ def compute_gradient(image,amplify=32,mode="sobel" ):
         sobel_y = torch.tensor([[-1/8, -2/8, -1/8], [0, 0, 0], [1/8, 2/8, 1/8]], dtype=torch.float32).unsqueeze(0).unsqueeze(0)
     sobel_x = sobel_x.to(image.device)
     sobel_y = sobel_y.to(image.device)
-    sobel_x = torch.cat((sobel_x,sobel_x,sobel_x),dim=1)
-    sobel_y = torch.cat((sobel_y,sobel_y,sobel_y),dim=1)
+    if image.shape[1]==3:
+        sobel_x = torch.cat((sobel_x,sobel_x,sobel_x),dim=1)
+        sobel_y = torch.cat((sobel_y,sobel_y,sobel_y),dim=1)
+    elif image.shape[1]==1:
+        # print(sobel_x.shape) # (1,1,3,3)
+        # print()
+        pass
+    else:
+        raise "channel of generated image is not 1 or 3"
     # 计算x方向和y方向的梯度
     grad_x = torch.nn.functional.conv2d(image, sobel_x, padding=1)
     grad_y = torch.nn.functional.conv2d(image, sobel_y, padding=1)

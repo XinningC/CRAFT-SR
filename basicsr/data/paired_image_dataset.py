@@ -5,7 +5,7 @@ from basicsr.data.data_util import paired_paths_from_folder, paired_paths_from_l
 from basicsr.data.transforms import augment, paired_random_crop
 from basicsr.utils import FileClient, bgr2ycbcr, imfrombytes, img2tensor
 from basicsr.utils.registry import DATASET_REGISTRY
-
+import numpy as np
 
 @DATASET_REGISTRY.register()
 class PairedImageDataset(data.Dataset):
@@ -171,6 +171,8 @@ class PairedImageOutputBWDataset(data.Dataset):
         gt_path = self.paths[index]['gt_path']
         img_bytes = self.file_client.get(gt_path, 'gt')
         img_gt = imfrombytes(img_bytes,flag='grayscale',float32=True)
+        if len(img_gt.shape)==2:
+            img_gt = np.expand_dims(img_gt,axis = -1)
         lq_path = self.paths[index]['lq_path']
         img_bytes = self.file_client.get(lq_path, 'lq')
         img_lq = imfrombytes(img_bytes, float32=True)
@@ -194,7 +196,10 @@ class PairedImageOutputBWDataset(data.Dataset):
             img_gt = img_gt[0:img_lq.shape[0] * scale, 0:img_lq.shape[1] * scale, :]
 
         # BGR to RGB, HWC to CHW, numpy to tensor
-        img_gt, img_lq = img2tensor([img_gt, img_lq], bgr2rgb=True, float32=True)
+        # img_gt, img_lq = img2tensor([img_gt, img_lq], bgr2rgb=True, float32=True)
+        img_gt= img2tensor(img_gt, bgr2rgb=True, float32=True)
+        img_lq = img2tensor(img_lq, bgr2rgb=True, float32=True)
+
         # normalize
         if self.mean is not None or self.std is not None:
             normalize(img_lq, self.mean, self.std, inplace=True)

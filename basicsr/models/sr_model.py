@@ -104,6 +104,9 @@ class SRModel(BaseModel):
 
         l_total = 0
         loss_dict = OrderedDict()
+        # print("self.output.shape):",self.output.shape)
+        # print("self.gt.shape):",self.gt.shape)
+        # print()
         # pixel loss
         if self.cri_pix:
             l_pix = self.cri_pix(self.output, self.gt)

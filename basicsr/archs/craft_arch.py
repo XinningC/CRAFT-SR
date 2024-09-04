@@ -643,6 +643,8 @@ class CRAFT(nn.Module):
             num_out_ch = in_chans
         else:
             num_out_ch = kwargs["out_chans"]
+        # print(num_out_ch)
+        # print()
         # print("\n"+str(num_out_ch)+"\n")
         # exit()
         num_feat = 64
@@ -783,7 +785,20 @@ class CRAFT(nn.Module):
         x = self.conv_after_body(self.forward_features(x)) + x
 
         x = self.upsample(x)
-        x = x / self.img_range + self.mean
+        # print(x.shape)
+        # exit()
+        # print("x0.shape:",x.shape)
+        if x.shape[1]==3:
+
+            x = x / self.img_range + self.mean
+        elif x.shape[1]==1:
+            x = x / self.img_range # self.mean for single channel image equals zero tensor
+            pass
+        else:
+            raise "Output image shape != 1 or 3"
+        # print("x1.shape:",x.shape)
+        # print("self.mean:",self.mean)
+        # exit()
         return x
 
 if __name__ == '__main__':

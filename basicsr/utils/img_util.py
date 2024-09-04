@@ -20,6 +20,10 @@ def img2tensor(imgs, bgr2rgb=True, float32=True):
     """
 
     def _totensor(img, bgr2rgb, float32):
+        # print(img.shape)
+        # for Black_White Images
+        if len(img.shape)==2:
+            img = img.expand_dims(-1)
         if img.shape[2] == 3 and bgr2rgb:
             if img.dtype == 'float64':
                 img = img.astype('float32')
